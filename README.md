@@ -20,7 +20,7 @@ It focuses on extracting structured data from documents using OCR techniques.
 1. Clone the repository:
 
 ```
-git clone <your-repo-link>
+git clone https://github.com/ayushsingh1406/OCR-Based-Scholarship-Processing-System.git
 cd OCR_Project
 ```
 
