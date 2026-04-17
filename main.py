@@ -21,7 +21,8 @@ warnings.filterwarnings("ignore")
 
 import re
 from paddleocr import PaddleOCR
-from utils.parser import extract_all_fields
+from utils.parsers import parse_aadhaar, parse_pan, parse_marksheet, parse_income
+from utils.document_classifier import classify_document, DocumentType
 from utils.preprocess import preprocess_image
 
 
@@ -76,9 +77,9 @@ def clean_ocr_texts(result) -> list[str]:
 
 
 # ─────────────────────────────────────────────────
-#  Process a single image
+#  Process a single document image
 # ─────────────────────────────────────────────────
-def process_aadhaar_image(ocr_engine, image_path: str, verbose: bool = False) -> dict:
+def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -> dict:
     """
     Process a single Aadhaar card image and extract all fields.
     
@@ -130,8 +131,25 @@ def process_aadhaar_image(ocr_engine, image_path: str, verbose: bool = False) ->
             print(f"    [{i:2d}] {t}")
         print()
 
-    # Step 4: Extract fields
-    fields = extract_all_fields(texts)
+    # Step 4: Classify and Extract fields
+    doc_type = classify_document(texts)
+    
+    if verbose:
+        print(f"  [INFO] Classified document as: {doc_type}")
+        
+    if doc_type == DocumentType.AADHAAR:
+        fields = parse_aadhaar(texts)
+    elif doc_type == DocumentType.PAN:
+        fields = parse_pan(texts)
+    elif doc_type == DocumentType.MARKSHEET:
+        fields = parse_marksheet(texts)
+    elif doc_type == DocumentType.INCOME:
+        fields = parse_income(texts)
+    else:
+        fields = {}
+
+    # Always include document type in output
+    fields["document_type"] = doc_type
 
     return fields
 
@@ -148,14 +166,28 @@ def print_results(fields: dict, image_name: str = ""):
     print(separator)
 
     field_labels = {
+        "document_type": "📄 Document Type",
         "card_side": "🔖 Card Side",
-        "name": "👤 Name",
+        "name": "👤 Full Name",
+        "student_name": "🎓 Student Name",
+        "applicant_name": "👤 Applicant Name",
         "dob": "🎂 Date of Birth",
         "gender": "⚧  Gender",
         "aadhaar_number": "🔢 Aadhaar Number",
+        "pan_number": "💳 PAN Number",
+        "roll_number": "📝 Roll Number",
+        "certificate_number": "📜 Certificate No",
         "vid": "🔐 VID",
         "relation_type": "👪 Relation",
+        "father_name": "👨 Father's Name",
+        "mother_name": "👩 Mother's Name",
         "guardian_name": "👨 Guardian Name",
+        "father_husband_name": "👨 Father/Husband",
+        "board_name": "🏛️ Board Name",
+        "total_marks": "📊 Total Marks",
+        "percentage": "📈 Percentage",
+        "passing_year": "📅 Passing Year",
+        "annual_income": "💰 Annual Income",
         "address": "🏠 Address",
         "pincode": "📮 PIN Code",
         "enrollment_no": "📋 Enrollment No",
@@ -217,7 +249,7 @@ def main():
         name = os.path.basename(img_path)
         print(f"🔍 Processing: {name}")
 
-        fields = process_aadhaar_image(ocr, img_path, verbose=verbose)
+        fields = process_document_image(ocr, img_path, verbose=verbose)
         all_results[name] = fields
         print_results(fields, name)
 
