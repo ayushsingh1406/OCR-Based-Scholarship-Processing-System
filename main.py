@@ -95,9 +95,21 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
         print(f"  [ERROR] File not found: {image_path}")
         return {}
 
+    # Step 0: Convert .webp to .png (PaddleOCR doesn't support .webp)
+    import cv2
+    actual_path = image_path
+    if image_path.lower().endswith('.webp'):
+        img = cv2.imread(image_path)
+        if img is not None:
+            actual_path = os.path.join("output", "_temp_webp_converted.png")
+            cv2.imwrite(actual_path, img)
+        else:
+            print(f"  [ERROR] Could not read .webp file: {image_path}")
+            return {}
+
     # Step 1: Preprocess image
     try:
-        preprocessed = preprocess_image(image_path)
+        preprocessed = preprocess_image(actual_path)
     except Exception as e:
         print(f"  [WARN] Preprocessing failed, using raw image: {e}")
         preprocessed = None
@@ -106,13 +118,12 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
     if preprocessed is not None:
         # Save preprocessed to temp file for PaddleOCR
         temp_path = os.path.join("output", "_temp_preprocessed.png")
-        import cv2
         cv2.imwrite(temp_path, preprocessed)
         result = ocr_engine.ocr(temp_path)
         # Also run on raw image for comparison
-        result_raw = ocr_engine.ocr(image_path)
+        result_raw = ocr_engine.ocr(actual_path)
     else:
-        result = ocr_engine.ocr(image_path)
+        result = ocr_engine.ocr(actual_path)
         result_raw = None
 
     # Step 3: Clean OCR output

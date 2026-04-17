@@ -46,6 +46,17 @@ def parse_marksheet(texts: List[str]) -> Dict[str, Any]:
     explicit_pct = _extract_percentage(texts)
     if explicit_pct:
         pct = explicit_pct  # Prefer explicit if available
+        
+    # ── Step 4: Calculate percentage if we have total in fraction format ──
+    if total and "/" in total and not pct:
+        try:
+            parts = total.split("/")
+            obtained = float(parts[0].strip())
+            max_val = float(parts[1].strip())
+            if max_val > 0:
+                pct = f"{round((obtained / max_val) * 100, 2)}%"
+        except:
+            pass
     
     result = {
         "board_name": _extract_board_name(texts),
@@ -65,38 +76,41 @@ def _extract_board_name(texts: List[str]) -> Optional[str]:
     for t in texts:
         t_lower = t.lower()
         if any(kw in t_lower for kw in ["board", "university", "council", "certificate examination", "secondary"]):
+            # Ignore sub-lines that look like address or school names
+            if any(kw in t_lower for kw in ["school", "vidyalaya", "kendra", "sector", "dated"]):
+                continue
             return t.strip().title()
     return None
 
 def _extract_student_name(texts: List[str]) -> Optional[str]:
-    # Look for 'certify that' pattern commonly used by CBSE
+    # ── Strategy 1: Formal Certify Pattern (Strongest) ──
     for i, t in enumerate(texts):
-        if "CERTIFY THAT" in t.upper() or "NAME OF STUDENT" in t.upper():
+        t_upper = t.upper()
+        if "CERTIFY THAT" in t_upper:
+            # Check current line (inline name)
+            clean = t_upper.replace("THIS IS TO CERTIFY THAT", "").replace(":", "").strip()
+            if len(clean) > 3:
+                return clean.title()
+            
+            # Check next lines
+            for j in range(i + 1, min(len(texts), i + 4)):
+                candidate = texts[j].strip()
+                if len(candidate) < 3: continue
+                if any(kw in candidate.upper() for kw in ["ROLL", "REGN", "NO.", "FATHER", "MOTHER", "SCHO", "BOARD", "EXAM"]):
+                    continue
+                return candidate.title()
+
+    # ── Strategy 2: Keyword based extraction ──
+    for i, t in enumerate(texts):
+        t_upper = t.upper()
+        if "NAME" in t_upper and any(kw in t_upper for kw in ["STUDENT", "CANDIDATE"]):
             parts = re.split(r'[:\-]', t)
             if len(parts) > 1 and len(parts[1].strip()) > 3:
                 return parts[1].strip().title()
             if i + 1 < len(texts):
                 next_t = texts[i+1].strip()
-                # Ensure the next line isn't just a number or roll prefix
-                if not any(char.isdigit() for char in next_t) and len(next_t) > 3:
+                if len(next_t) > 3 and not any(kw in next_t.upper() for kw in ["FATHER", "MOTHER", "DOB", "ROLL", "BOARD"]):
                     return next_t.title()
-
-    # Fallback to keyword search, but strictly avoid 'MOTHER' and 'FATHER'
-    for i, t in enumerate(texts):
-        t_upper = t.upper()
-        if "NAME" in t_upper or "CANDIDATE" in t_upper or "STUDENT" in t_upper:
-            if "MOTHER" in t_upper or "FATHER" in t_upper or "GUARDIAN" in t_upper or "SCHOOL" in t_upper:
-                continue
-                
-            parts = re.split(r'[:\-]', t)
-            if len(parts) > 1 and len(parts[1].strip()) > 3:
-                return parts[1].strip().title()
-            
-            # Check next line
-            if i + 1 < len(texts):
-                next_line = texts[i+1].strip()
-                if len(next_line) > 3 and not any(kw in next_line.upper() for kw in ["ROLL", "REGISTRATION", "DOB", "DATE", "MOTHER", "FATHER"]):
-                    return next_line.title()
     return None
 
 def _extract_parent_name(texts: List[str], keywords: List[str]) -> Optional[str]:
@@ -104,21 +118,25 @@ def _extract_parent_name(texts: List[str], keywords: List[str]) -> Optional[str]
     for i, t in enumerate(texts):
         t_upper = t.upper()
         if any(kw in t_upper for kw in keywords):
-            # Try to grab inline (e.g. "Mother's Name URMILA PANDEY")
-            # Replace the keyword with empty string to grab the rest
+            # 1. Check same line
             t_cleaned = t_upper
             for kw in keywords:
                 t_cleaned = t_cleaned.replace(kw, "")
-            t_cleaned = t_cleaned.replace("NAME", "").replace("S/", "").replace("'", "").replace(":", "-").strip("- ")
+            t_cleaned = t_cleaned.replace("NAME", "").replace("S/", "").replace("'", "").replace(":", "").replace("-", "").strip()
             
             if len(t_cleaned) > 3:
                 return t_cleaned.title()
 
-            # Otherwise grab next line
-            if i + 1 < len(texts):
-                next_line = texts[i+1].strip()
-                if len(next_line) > 3 and not any(char.isdigit() for char in next_line):
-                    return next_line.title()
+            # 2. Check next lines
+            for j in range(i + 1, min(len(texts), i + 3)):
+                candidate = texts[j].strip()
+                # Skip short noise
+                if len(candidate) < 3 or any(kw in candidate.upper() for kw in ["SCHOOL", "BOARD", "DATED", "RESULT"]):
+                    continue
+                # Reject if it's mostly numbers
+                if sum(c.isdigit() for c in candidate) > len(candidate) * 0.5:
+                    continue
+                return candidate.title()
     return None
 
 def _extract_roll_number(texts: List[str]) -> Optional[str]:
@@ -151,20 +169,39 @@ def _extract_passing_year(texts: List[str]) -> Optional[str]:
     return None
 
 def _extract_total_marks(texts: List[str]) -> Optional[str]:
-    # Look for aggregate format like 487/650 or nearby numbers to 'Total Marks'
+    # Strategy 1: Look for fractional format like 434/500 or 434 / 500
+    for i, t in enumerate(texts):
+        # Look for explicit Total Marks keyword context
+        if "TOTAL" in t.upper() or "GRAND TOTAL" in t.upper() or "MARKS OBTAINED" in t.upper():
+            # Check this line and next 2 lines
+            for j in range(i, min(len(texts), i + 3)):
+                match = re.search(r'(\d{3,4})\s*/\s*(\d{3,4})', texts[j])
+                if match:
+                    return f"{match.group(1)} / {match.group(2)}"
+                # Also check for space-separated big numbers e.g. "434 500"
+                matches = re.findall(r'\b\d{3,4}\b', texts[j])
+                if len(matches) >= 2:
+                    obtained, total = int(matches[0]), int(matches[1])
+                    if obtained < total and total >= 100:
+                        return f"{obtained} / {total}"
+    
+    # Strategy 2: Standalone fraction search
+    for t in texts:
+        match = re.search(r'\b(\d{3})\s*/\s*(\d{3,4})\b', t)
+        if match:
+            return f"{match.group(1)} / {match.group(2)}"
+            
+    # Strategy 3: Original keyword-based search for single numbers
     for i, t in enumerate(texts):
         if "TOTAL" in t.upper() or "GRAND TOTAL" in t.upper() or "MARKS OBTAINED" in t.upper():
-            # Check for inline numbers e.g., "Total Marks: 487"
             digits = re.findall(r'\b\d{3,4}\b', t)
             if digits:
-                return max(digits, key=int)  # Usually the larger number is the total, or it's the only one 
+                return max(digits, key=int)
             
-            # Check nearby lines
             nearby_digits = []
             for j in range(max(0, i-2), min(len(texts), i+3)):
                 nearby_digits.extend(re.findall(r'\b\d{3,4}\b', texts[j]))
             if nearby_digits:
-                # If we have multiple numbers like 487 and 650, format them
                 unique_digits = sorted(list(set(int(d) for d in nearby_digits if 100 <= int(d) <= 2000)), reverse=True)
                 if len(unique_digits) >= 2:
                     return f"{unique_digits[1]} / {unique_digits[0]}"

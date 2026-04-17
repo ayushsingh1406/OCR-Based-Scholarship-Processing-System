@@ -355,7 +355,7 @@ def extract_name(texts: List[str]) -> Optional[str]:
                 gdist = gender_idx - i
                 if 1 <= gdist <= 4:
                     score += 10
-            score += 15  # strong bonus for being a merged multi-line name
+            score += 25  # strong bonus for being a merged multi-line name
             candidates.append((merged.title(), score, i))
 
     if candidates:
@@ -440,10 +440,11 @@ def extract_relation_name(texts: List[str]) -> Optional[dict]:
                 stop_words = ['flat', 'floor', 'street', 'sector', 'ward',
                               'house', 'plot', 'block', 'lane', 'road',
                               'village', 'town', 'city', 'dist', 'po:',
-                              'vtc', 'noida', 'delhi', ',']
+                              'vtc:', 'vtc', 'sub district', 'district', 'state', 'pin',
+                              'noida', 'delhi', 'saniana', 'saniyana', 'f Haryana', ',']
                 for sw in stop_words:
                     idx = name.lower().find(sw)
-                    if idx > 0:
+                    if idx >= 0:
                         name = name[:idx]
 
                 # Stop at lowercase words (likely address leaking into name, e.g. "Arvind Kumarmeera saray")
