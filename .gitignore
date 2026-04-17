@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Environment variables
+.env
+
+# Output files (but keep folder)
+output/*
+!output/.keep
+
+# Test images (but keep folder)
+test_images/*
+!test_images/.keep
+
+# OS files
+.DS_Store
+Thumbs.db
