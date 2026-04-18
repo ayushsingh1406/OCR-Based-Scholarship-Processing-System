@@ -2,104 +2,137 @@
 
 ## 📌 Overview
 
-This project is a **paperless scholarship processing system** that extracts structured information from government documents using OCR.
+A **paperless scholarship processing system** that extracts structured data from government documents using Optical Character Recognition (OCR).
 
-It supports documents like:
+The system processes document images and converts them into **structured JSON output**, enabling automated verification workflows.
 
-* Aadhaar Card
-* PAN Card
-* Marksheet
-* Income Certificate
-
-The system processes images and outputs **structured JSON data**, enabling automation of document verification workflows.
+### 📑 Supported Documents
+- Aadhaar Card  
+- PAN Card  
+- Marksheet  
+- Income Certificate  
 
 ---
 
 ## 🚀 Features
 
-* 🔍 OCR-based text extraction using PaddleOCR
-* 🧹 Image preprocessing for improved accuracy
-* 🧠 Document classification (Aadhaar, PAN, etc.)
-* 📦 Structured JSON output
-* 🧩 Modular architecture (preprocessing + parsing)
-* 🐳 Docker support for reproducible environment
-* ⚡ Model caching (no repeated downloads)
+- 🔍 **OCR Extraction** using PaddleOCR  
+- 🧹 **Image Preprocessing** for improved accuracy  
+- 🧠 **Document Classification** (Aadhaar, PAN, etc.)  
+- 📦 **Structured JSON Output**  
+- 🧩 **Modular Architecture** (preprocessing + parsing)  
+- 🐳 **Docker Support** for reproducibility  
+- ⚡ **Model Caching** (avoids repeated downloads)  
 
 ---
 
 # 🐳 Recommended Setup (Docker)
 
-> ✅ No need to install Python or dependencies
-> ✅ Works on any system (Windows / Linux / Mac)
+> ✔ No Python installation required  
+> ✔ Cross-platform (Windows / Linux / Mac)  
 
 ---
 
 ## 🔧 Step 1 — Install Docker
 
-Download Docker Desktop:
+Download Docker Desktop:  
 https://www.docker.com/products/docker-desktop/
 
 ---
 
 ## 📥 Step 2 — Clone Repository
 
-```
+```bash
 git clone https://github.com/ayushsingh1406/OCR-Based-Scholarship-Processing-System.git
 cd OCR_Project
 ```
 
 ---
 
-## 🏗️ Step 3 — Build Docker Image (ONE TIME)
+## 🏗️ Step 3 — Build Docker Image (One-Time)
 
-```
+```bash
 docker build -t ocr-project .
 ```
 
-## ▶️ Step 4 — Run Project
+---
+
+## 📁 Step 4 — Create Model Cache Directory
+
+```bash
+mkdir paddle_models
+```
+
+---
+
+## ▶️ Step 5 — Run the Project
+
+This command mounts:
+
+- 📂 Project directory → enables live updates  
+- 📦 Model cache → avoids re-downloading OCR models  
+
+---
 
 ### 🔹 Windows (PowerShell)
 
-```
-docker run -it -v ${PWD}/paddle_models:/root/.paddlex ocr-project
+```bash
+docker run -it -v ${PWD}:/app -v ${PWD}/paddle_models:/root/.paddlex ocr-project
 ```
 
 ---
 
 ### 🔹 Windows (CMD)
 
-```
-docker run -it -v %cd%/paddle_models:/root/.paddlex ocr-project
+```bash
+docker run -it -v %cd%:/app -v %cd%/paddle_models:/root/.paddlex ocr-project
 ```
 
 ---
 
 ### 🔹 Linux / Mac
 
-```
-docker run -it -v $(pwd)/paddle_models:/root/.paddlex ocr-project
+```bash
+docker run -it -v $(pwd):/app -v $(pwd)/paddle_models:/root/.paddlex ocr-project
 ```
 
 ---
 
-## ⚡ Important Note
+## ⚡ Important Notes
 
-* First run → models will download
-* Next runs → no download (cached locally)
+- `/app` mount:
+  - Enables live file updates (e.g., `test_images`)
+  - Reflects code changes without rebuilding  
+
+- `/root/.paddlex` mount:
+  - Stores OCR models locally  
+  - Prevents repeated downloads  
+
+### ❗ Without `/app` mount:
+- New images will NOT be detected  
+- Code updates will NOT reflect  
 
 ---
 
-# 🧪 Usage
+## 💡 Tip
 
-1. Place document images inside:
+After building the image once:
+- Add new images anytime to `test_images/`
+- Re-run the container without rebuilding  
+
+---
+
+## 🧪 Usage
+
+1. Place input images inside:
 
 ```
 test_images/
 ```
 
-2. Run the system (via Docker)
+2. Run the system (Docker)
 
-3. Output will be saved in:
+3. Output will be generated at:
 
 ```
 output/result.json
@@ -107,11 +140,11 @@ output/result.json
 
 ---
 
-# 🔁 Team Workflow
+## 🔁 Team Workflow
 
 For collaborators:
 
-```
+```bash
 git pull
 docker build -t ocr-project .
 docker run -it -v <path>/paddle_models:/root/.paddlex ocr-project
@@ -119,12 +152,14 @@ docker run -it -v <path>/paddle_models:/root/.paddlex ocr-project
 
 ---
 
-# 🖥️ Alternative (Without Docker)
+# 🖥️ Alternative Setup (Without Docker)
 
-> ⚠️ Not recommended (may cause dependency issues)
+> ⚠️ Not recommended (possible dependency conflicts)
 
-```
+```bash
 python -m venv venv
+
+# Activate environment
 venv\Scripts\activate        # Windows
 source venv/bin/activate     # Linux/Mac
 
@@ -134,34 +169,34 @@ python main.py
 
 ---
 
-# 🔒 Data Privacy Notice
+## 🔒 Data Privacy Notice
 
 This repository does NOT include:
 
-* Aadhaar images
-* Sensitive personal data
+- Aadhaar images  
+- Any sensitive personal data  
 
 Users must provide their own test data locally.
 
 ---
 
-# 🛠️ Future Scope
+## 🛠️ Future Scope
 
-* 🌐 API integration (FastAPI)
-* 🗄️ Database integration
-* 📤 Document upload system
-* 🤖 Improved ML-based field extraction
-
----
-
-# 👥 Contributors
-
-* Ayush Kumar Singh
-* Aditi Avinash Sable
-* Heramb Pandey
+- 🌐 FastAPI integration (API layer)  
+- 🗄️ Database integration  
+- 📤 Web-based document upload system  
+- 🤖 Advanced ML-based field extraction  
 
 ---
 
-# 📄 License
+## 👥 Contributors
 
-This project is for educational and development purposes.
+- Ayush Kumar Singh  
+- Aditi Avinash Sable  
+- Heramb Pandey  
+
+---
+
+## 📄 License
+
+This project is intended for **educational and development purposes only**.
