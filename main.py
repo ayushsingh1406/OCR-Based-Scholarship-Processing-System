@@ -81,23 +81,17 @@ def clean_ocr_texts(result) -> list[str]:
 # ─────────────────────────────────────────────────
 def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -> dict:
     """
-    Process a single Aadhaar card image and extract all fields.
-    
-    Args:
-        ocr_engine: Initialized PaddleOCR instance
-        image_path: Path to the Aadhaar card image
-        verbose: If True, print intermediate OCR results
-        
-    Returns:
-        Dictionary of extracted fields
+    Process a single document image and extract all fields.
     """
+    import cv2
+
     if not os.path.exists(image_path):
         print(f"  [ERROR] File not found: {image_path}")
         return {}
 
-    # Step 0: Convert .webp to .png (PaddleOCR doesn't support .webp)
-    import cv2
     actual_path = image_path
+
+    # Step 0: Convert .webp → .png (if needed)
     if image_path.lower().endswith('.webp'):
         img = cv2.imread(image_path)
         if img is not None:
@@ -114,23 +108,40 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
         print(f"  [WARN] Preprocessing failed, using raw image: {e}")
         preprocessed = None
 
-    # Step 2: Run OCR (try preprocessed first, fallback to raw)
-    if preprocessed is not None:
-        # Save preprocessed to temp file for PaddleOCR
-        temp_path = os.path.join("output", "_temp_preprocessed.png")
-        cv2.imwrite(temp_path, preprocessed)
-        result = ocr_engine.ocr(temp_path)
-        # Also run on raw image for comparison
-        result_raw = ocr_engine.ocr(actual_path)
-    else:
-        result = ocr_engine.ocr(actual_path)
-        result_raw = None
+    # Step 2: Load RAW image using OpenCV (MANDATORY FIX)
+    img_raw = cv2.imread(actual_path)
+    if img_raw is None:
+        print(f"  [ERROR] Failed to load image: {actual_path}")
+        return {}
 
-    # Step 3: Clean OCR output
+    # Step 3: Run OCR using image arrays (NOT file paths)
+    result = None
+    result_raw = None
+
+    if preprocessed is not None:
+        try:
+            result = ocr_engine.ocr(preprocessed)
+        except Exception as e:
+            print(f"  [WARN] OCR failed on preprocessed image: {e}")
+            result = None
+
+        try:
+            result_raw = ocr_engine.ocr(img_raw)
+        except Exception as e:
+            print(f"  [WARN] OCR failed on raw image: {e}")
+            result_raw = None
+    else:
+        try:
+            result = ocr_engine.ocr(img_raw)
+        except Exception as e:
+            print(f"  [ERROR] OCR failed: {e}")
+            return {}
+
+    # Step 4: Clean OCR output
     texts_preprocessed = clean_ocr_texts(result)
     texts_raw = clean_ocr_texts(result_raw) if result_raw else []
 
-    # Merge: use preprocessed as primary, supplement with raw unique texts
+    # Merge results (avoid duplicates)
     texts = texts_preprocessed.copy()
     for t in texts_raw:
         if t not in texts:
@@ -142,12 +153,12 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
             print(f"    [{i:2d}] {t}")
         print()
 
-    # Step 4: Classify and Extract fields
+    # Step 5: Classify and Extract fields
     doc_type = classify_document(texts)
-    
+
     if verbose:
         print(f"  [INFO] Classified document as: {doc_type}")
-        
+
     if doc_type == DocumentType.AADHAAR:
         fields = parse_aadhaar(texts)
     elif doc_type == DocumentType.PAN:
@@ -159,7 +170,7 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
     else:
         fields = {}
 
-    # Always include document type in output
+    # Always include document type
     fields["document_type"] = doc_type
 
     return fields

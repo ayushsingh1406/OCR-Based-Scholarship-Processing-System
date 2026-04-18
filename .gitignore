@@ -1,21 +1,82 @@
-# Python cache
-__pycache__/
+# ------------------------------
+
+# Python Cache
+
+# ------------------------------
+
+**pycache**/
 *.pyc
+*.pyo
+*.pyd
 
-# Virtual environment
+# ------------------------------
+
+# Virtual Environment
+
+# ------------------------------
+
 venv/
-
-# Environment variables
 .env
+.env.*
 
-# Output files (but keep folder)
+# ------------------------------
+
+# Output Files (keep folder)
+
+# ------------------------------
+
 output/*
 !output/.keep
 
-# Test images (but keep folder)
+# ------------------------------
+
+# Test Images (keep folder)
+
+# ------------------------------
+
 test_images/*
 !test_images/.keep
 
-# OS files
+# ------------------------------
+
+# Paddle / OCR Model Cache (VERY IMPORTANT)
+
+# ------------------------------
+
+paddle_models/*
+!paddle_models/.keep
+
+# ------------------------------
+
+# Logs & Temporary Files
+
+# ------------------------------
+
+*.log
+*.tmp
+
+# ------------------------------
+
+# OS-specific files
+
+# ------------------------------
+
 .DS_Store
 Thumbs.db
+
+# ------------------------------
+
+# Docker (optional cleanup)
+
+# ------------------------------
+
+*.tar
+
+# ------------------------------
+
+# IDE / Editor files
+
+# ------------------------------
+
+.vscode/
+.idea/
