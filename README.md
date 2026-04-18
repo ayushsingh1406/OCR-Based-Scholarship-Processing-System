@@ -56,17 +56,7 @@ cd OCR_Project
 docker build -t ocr-project .
 ```
 
----
-
-## 📁 Step 4 — Create Model Cache Folder
-
-```
-mkdir paddle_models
-```
-
----
-
-## ▶️ Step 5 — Run Project
+## ▶️ Step 4 — Run Project
 
 ### 🔹 Windows (PowerShell)
 
