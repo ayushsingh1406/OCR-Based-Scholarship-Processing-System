@@ -140,6 +140,65 @@ output/result.json
 
 ---
 
+## � Project Structure
+
+```
+OCR_Project/
+├── main.py                          # Entry point - runs OCR processing
+├── requirements.txt                 # Python dependencies
+├── Dockerfile                       # Docker configuration
+├── README.md                        # This file
+│
+├── test_images/                     # Input: Place document images here
+│   └── (user adds image files)
+│
+├── output/                          # Output: Generated results
+│   ├── results.json                 # Main OCR extraction results
+│   ├── decision.json                # Classification/decision output
+│   └── annotated/                   # Annotated images (if enabled)
+│
+├── utils/                           # Core processing modules
+│   ├── preprocess.py                # Image preprocessing
+│   ├── document_classifier.py       # Document type classification
+│   ├── scholarship_decision.py      # Scholarship eligibility logic
+│   ├── watermark_detector.py        # Watermark detection
+│   │
+│   ├── parsers/                     # Document-specific parsers
+│   │   ├── aadhaar.py               # Aadhaar card parsing
+│   │   ├── pan.py                   # PAN card parsing
+│   │   ├── income.py                # Income certificate parsing
+│   │   └── marksheet.py             # Marksheet parsing
+│   │
+│   └── verification/                # Verification modules
+│
+├── paddle_models/                   # OCR Model storage (auto-downloaded)
+│   ├── official_models/             # PaddleOCR models
+│   │   ├── PP-LCNet_x1_0_doc_ori/   # Document classification model
+│   │   ├── PP-LCNet_x1_0_textline_ori/  # Text line detection model
+│   │   ├── PP-OCRv5_server_det/     # Text detection model
+│   │   ├── PP-OCRv5_server_rec/     # Text recognition model
+│   │   └── UVDoc/                   # Document understanding model
+│   ├── func_ret/                    # Function return artifacts
+│   ├── locks/                       # Lock files for model safety
+│   └── temp/                        # Temporary processing files
+│
+└── yolo_detector/                   # YOLO detection models
+    └── models/
+        └── detector.pt              # YOLO detector weights
+```
+
+### 📋 Key Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `test_images/` | **INPUT**: Place document images here before running |
+| `output/` | **OUTPUT**: Results stored as JSON files |
+| `utils/` | **CORE**: Processing logic and document parsers |
+| `paddle_models/` | **MODELS**: OCR models (auto-managed, ~2GB) |
+| `yolo_detector/` | **DETECTION**: YOLO-based object detection models |
+
+---
+
 ## 🔁 Team Workflow
 
 For collaborators:

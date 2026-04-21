@@ -1,12 +1,10 @@
 FROM python:3.11-slim
 
-# Prevent Python buffering issues
+# Environment
 ENV PYTHONUNBUFFERED=1
-
-# Fix Paddle model path (VERY IMPORTANT)
 ENV PADDLE_HOME=/paddle_models
 
-# Install system dependencies required by OpenCV + Paddle
+# System dependencies (minimal for OpenCV + Paddle)
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
@@ -16,20 +14,21 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy entire project into container
+# Copy requirements first (for caching)
+COPY requirements.txt .
+
+# Install dependencies (single layer + no cache)
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
 COPY . .
 
-# Upgrade pip
-RUN pip install --upgrade pip
-
-# Install dependencies
-RUN pip install -r requirements.txt
-
-# Create required folders (safety)
-RUN mkdir -p output test_images /paddle_models
+# Create runtime directories
+RUN mkdir -p /app/output /app/test_images /paddle_models
 
 # Default command
 CMD ["python", "main.py"]

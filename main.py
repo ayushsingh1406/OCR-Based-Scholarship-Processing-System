@@ -24,6 +24,8 @@ from paddleocr import PaddleOCR
 from utils.parsers import parse_aadhaar, parse_pan, parse_marksheet, parse_income
 from utils.document_classifier import classify_document, DocumentType
 from utils.preprocess import preprocess_image
+from utils.watermark_detector import WatermarkDetector
+from utils.scholarship_decision import ScholarshipDecisionEngine
 
 
 # ─────────────────────────────────────────────────
@@ -79,7 +81,7 @@ def clean_ocr_texts(result) -> list[str]:
 # ─────────────────────────────────────────────────
 #  Process a single document image
 # ─────────────────────────────────────────────────
-def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -> dict:
+def process_document_image(ocr_engine, watermark_detector, image_path: str, verbose: bool = False) -> dict:
     """
     Process a single document image and extract all fields.
     """
@@ -173,6 +175,30 @@ def process_document_image(ocr_engine, image_path: str, verbose: bool = False) -
     # Always include document type
     fields["document_type"] = doc_type
 
+    # Step 6: Watermark & Logo Detection
+    if watermark_detector:
+        if verbose:
+            print(f"  [INFO] Running watermark detection for {doc_type}...")
+        
+        detections = watermark_detector.detect(actual_path)
+        
+        # Filter detections based on document type requirements
+        watermark_results = {}
+        if doc_type == DocumentType.AADHAAR:
+            watermark_results["ashoka_emblem"] = detections.get("ashoka_emblem", False)
+            watermark_results["aadhaar_logo"] = detections.get("aadhaar_logo", False)
+        elif doc_type == DocumentType.PAN:
+            watermark_results["ashoka_emblem"] = detections.get("ashoka_emblem", False)
+            watermark_results["signature"] = detections.get("signature", False)
+        elif doc_type == DocumentType.MARKSHEET or doc_type == DocumentType.INCOME:
+            watermark_results["ashoka_emblem"] = detections.get("ashoka_emblem", False)
+            watermark_results["signature"] = detections.get("signature", False)
+        else:
+            # For unknowns, provide all basic detections
+            watermark_results = detections
+
+        fields["watermark_detection"] = watermark_results
+
     return fields
 
 
@@ -263,6 +289,11 @@ def main():
     ocr = init_ocr()
     print("✅ OCR engine ready.\n")
 
+    # Initialize Watermark Detector
+    print("🎯 Initializing Watermark detector...")
+    detector = WatermarkDetector()
+    print("✅ Watermark detector ready.\n")
+
     # Process each image
     all_results = {}
 
@@ -271,7 +302,7 @@ def main():
         name = os.path.basename(img_path)
         print(f"🔍 Processing: {name}")
 
-        fields = process_document_image(ocr, img_path, verbose=verbose)
+        fields = process_document_image(ocr, detector, img_path, verbose=verbose)
         all_results[name] = fields
         print_results(fields, name)
 
@@ -280,6 +311,31 @@ def main():
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=2, ensure_ascii=False)
     print(f"\n📁 Results saved to: {output_json}")
+
+    # ── Scholarship Decision Engine ──
+    print("\n⚖️  Running Scholarship Decision Engine...")
+    engine = ScholarshipDecisionEngine()
+    decision = engine.analyze(all_results)
+    
+    decision_json = os.path.join("output", "decision.json")
+    with open(decision_json, "w", encoding="utf-8") as f:
+        json.dump(decision, f, indent=2, ensure_ascii=False)
+    
+    print(f"📁 Decision saved to: {decision_json}")
+    
+    # Pretty print decision summary
+    print("\n" + "═"*50)
+    print("        🎓 SCHOLARSHIP DECISION")
+    print("═"*50)
+    status_emoji = {"APPROVED": "✅", "NOT APPROVED": "❌", "MANUAL": "🔍"}
+    print(f"  Status        : {status_emoji.get(decision['status'], '')} {decision['status']}")
+    print(f"  Amount        : ₹{decision['scholarship_amount']:,}")
+    print(f"  Consistency   : {decision['analysis']['data_consistency']}")
+    print(f"  Authenticity  : {decision['analysis']['authenticity_check']}")
+    print("\n  Reasons:")
+    for r in decision['reasons']:
+        print(f"    - {r}")
+    print("═"*50 + "\n")
 
     # Cleanup temp file
     temp_path = os.path.join("output", "_temp_preprocessed.png")

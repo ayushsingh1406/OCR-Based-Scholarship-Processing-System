@@ -1,0 +1,42 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# ML / project artifacts (VERY IMPORTANT)
+paddle_models/
+runs/
+output/
+test_images/
+
+# Model weights
+*.pt
+*.pdparams
+*.onnx
+
+# Large datasets (if any)
+data/
+datasets/
+
+# VS Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
