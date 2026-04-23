@@ -7,6 +7,7 @@ __pycache__/
 # Virtual environments
 venv/
 .env/
+.venv/
 
 # Git
 .git/
@@ -19,7 +20,7 @@ venv/
 .DS_Store
 Thumbs.db
 
-# ML / project artifacts (VERY IMPORTANT)
+# ML artifacts (CRITICAL)
 paddle_models/
 runs/
 output/
@@ -30,13 +31,26 @@ test_images/
 *.pdparams
 *.onnx
 
-# Large datasets (if any)
+# Large datasets
 data/
 datasets/
 
-# VS Code
-.vscode/
+# Images & docs (avoid accidental inclusion)
+*.jpg
+*.jpeg
+*.png
+*.pdf
 
-# Temporary files
+# IDE
+.vscode/
+.idea/
+
+# Temp files
 *.tmp
 *.temp
+
+# Frontend (good that you excluded this)
+frontend/
+
+# Docker (optional but safe)
+docker-compose.yml

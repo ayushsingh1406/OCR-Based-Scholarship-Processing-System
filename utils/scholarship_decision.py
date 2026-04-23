@@ -26,6 +26,39 @@ class ScholarshipDecisionEngine:
         
         return SequenceMatcher(None, s1, s2).ratio()
 
+    def _clean_guardian_name(self, name: Optional[str]) -> str:
+        """
+        Manually remove prefixes like 'Guardian's', 'S/O', 'D/O', etc.
+        As requested, prioritizes cleanliness for decision.json.
+        """
+        if not name or str(name).upper() == "N/A":
+            return "N/A"
+            
+        cleaned = str(name).strip()
+        
+        # Prefixes to remove (case-insensitive)
+        prefixes = [
+            r"guardian['s]*", r"parent['s]*", r"father['s]*", r"mother['s]*",
+            r"s/o", r"d/o", r"w/o", r"c/o", r"p/o",
+            r"son\s+of", r"daughter\s+of", r"wife\s+of", r"care\s+of",
+            r"\bsp\b", r"\bso\b", r"\bdo\b", r"\bwo\b", r"\bco\b",
+        ]
+        
+        # Combine into a regex that matches at the start of the string
+        combined_regex = r'^(?:' + '|'.join(prefixes) + r')[:\-\s]*'
+        
+        # Apply recursively (up to 3 times) to handle nested prefixes
+        for _ in range(3):
+            new_cleaned = re.sub(combined_regex, '', cleaned, flags=re.IGNORECASE).strip()
+            if new_cleaned == cleaned:
+                break
+            cleaned = new_cleaned
+            
+        # Remove any leading non-alphabetic garbage characters except common titles
+        cleaned = re.sub(r'^[^a-zA-Z]+', '', cleaned).strip()
+            
+        return cleaned if cleaned else name
+
     def analyze(self, results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         """
         Analyze all document results and make a scholarship decision.
@@ -147,7 +180,18 @@ class ScholarshipDecisionEngine:
                 "academic_performance": f"{percentage_val}%",
                 "annual_income": f"₹{income_val:,}",
                 "data_consistency": f"{int(sum(consistency_scores)/len(consistency_scores)*100)}%" if consistency_scores else "N/A",
-                "authenticity_check": "FAILED" if missing_watermarks else "PASSED"
+                "authenticity_check": "FAILED" if missing_watermarks else "PASSED",
+                "extracted_data": {
+                    "name": id_doc.get("name") if id_doc else "N/A",
+                    "guardian": self._clean_guardian_name(
+                        (id_doc.get("father_name") or id_doc.get("guardian_name") if id_doc else None) or 
+                        (marksheet_doc.get("father_name") if marksheet_doc else None) or
+                        (income_doc.get("father_husband_name") if income_doc else None) or "N/A"
+                    ),
+                    "dob": id_doc.get("dob") if id_doc else "N/A",
+                    "percentage": f"{percentage_val}%" if percentage_val else "N/A",
+                    "income": income_val if income_val else 0
+                }
             },
             "reasons": reasons
         }

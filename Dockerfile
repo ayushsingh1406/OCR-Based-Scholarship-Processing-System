@@ -1,11 +1,14 @@
+# ---- Base image ----
 FROM python:3.11-slim
 
-# Environment
-ENV PYTHONUNBUFFERED=1
-ENV PADDLE_HOME=/paddle_models
+# ---- Environment ----
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PADDLE_HOME=/paddle_models
 
-# System dependencies (minimal for OpenCV + Paddle)
-RUN apt-get update && apt-get install -y \
+# ---- System dependencies (minimal, no extra bloat) ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
@@ -14,21 +17,27 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# ---- Workdir ----
 WORKDIR /app
 
-# Copy requirements first (for caching)
+# ---- Install dependencies (cached layer) ----
 COPY requirements.txt .
 
-# Install dependencies (single layer + no cache)
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir --prefer-binary -r requirements.txt
 
-# Copy project files
-COPY . .
+# ---- Copy only necessary files ----
+# (DO NOT use COPY . . blindly)
+COPY server.py .
+# If you have folders, explicitly copy them:
+# COPY src/ ./src/
+# COPY utils/ ./utils/
 
-# Create runtime directories
+# ---- Create runtime directories (empty, no data baked in) ----
 RUN mkdir -p /app/output /app/test_images /paddle_models
 
-# Default command
-CMD ["python", "main.py"]
+# ---- Expose port (if using FastAPI/Flask) ----
+EXPOSE 8000
+
+# ---- Run server ----
+CMD ["python", "server.py"]

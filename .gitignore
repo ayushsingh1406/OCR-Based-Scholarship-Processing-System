@@ -1,6 +1,6 @@
 # ------------------------------
 
-# Python Cache
+# Python Cache / Bytecode
 
 # ------------------------------
 
@@ -8,6 +8,7 @@
 *.pyc
 *.pyo
 *.pyd
+*.py,cover
 
 # ------------------------------
 
@@ -16,8 +17,23 @@
 # ------------------------------
 
 venv/
+.venv/
+env/
 .env
 .env.*
+!.env.example
+
+# ------------------------------
+
+# Python Build / Packaging
+
+# ------------------------------
+
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
 
 # ------------------------------
 
@@ -27,6 +43,11 @@ venv/
 
 output/*
 !output/.keep
+
+# Annotated images (NEW FEATURE)
+
+output/annotated/*
+!output/annotated/.keep
 
 # ------------------------------
 
@@ -39,7 +60,7 @@ test_images/*
 
 # ------------------------------
 
-# Paddle / OCR Model Cache (VERY IMPORTANT)
+# Paddle / OCR Model Cache
 
 # ------------------------------
 
@@ -54,6 +75,8 @@ paddle_models/*
 
 *.log
 *.tmp
+*.swp
+*.swo
 
 # ------------------------------
 
@@ -66,11 +89,12 @@ Thumbs.db
 
 # ------------------------------
 
-# Docker (optional cleanup)
+# Docker
 
 # ------------------------------
 
 *.tar
+docker-compose.override.yml
 
 # ------------------------------
 
@@ -80,3 +104,45 @@ Thumbs.db
 
 .vscode/
 .idea/
+*.iml
+
+# ------------------------------
+
+# FastAPI / Backend extras
+
+# ------------------------------
+
+**pypackages**/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ------------------------------
+
+# Frontend (React / Vite)
+
+# ------------------------------
+
+node_modules/
+frontend/node_modules/
+
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# Vite cache
+
+node_modules/.vite/
+
+# ------------------------------
+
+# Misc
+
+# ------------------------------
+
+*.bak
+*.orig

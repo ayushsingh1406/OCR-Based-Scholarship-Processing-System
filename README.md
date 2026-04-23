@@ -2,257 +2,147 @@
 
 ## 📌 Overview
 
-A **paperless scholarship processing system** that extracts structured data from government documents using Optical Character Recognition (OCR).
+A **paperless scholarship processing system** that extracts structured data from government documents using Optical Recognition (OCR) and detects authenticity markers like Ashoka emblems, Aadhaar logos, and signatures using a custom-trained YOLOv8 model.
 
-The system processes document images and converts them into **structured JSON output**, enabling automated verification workflows.
+The system converts raw document images into **structured JSON intelligence**, enabling automated verification and rapid scholarship decision-making.
 
 ### 📑 Supported Documents
 - Aadhaar Card  
 - PAN Card  
-- Marksheet  
+- Marksheet (High School/Higher Secondary)
 - Income Certificate  
 
 ---
 
 ## 🚀 Features
 
-- 🔍 **OCR Extraction** using PaddleOCR  
-- 🧹 **Image Preprocessing** for improved accuracy  
-- 🧠 **Document Classification** (Aadhaar, PAN, etc.)  
-- 📦 **Structured JSON Output**  
-- 🧩 **Modular Architecture** (preprocessing + parsing)  
-- 🐳 **Docker Support** for reproducibility  
-- ⚡ **Model Caching** (avoids repeated downloads)  
+- 🔍 **Precision OCR** using PaddleOCR for multi-document parsing.
+- 🧹 **Intelligent Preprocessing** for high-accuracy extraction.
+- 🧠 **Auto-Classification** of document types.
+- 📦 **Structured Data Synthesis** in JSON format.
+- 🎯 **Visual Authenticity Layers** via YOLO detection.
+- 🧩 **Decoupled Architecture** (FastAPI + React).
+- 🐳 **Docker-Ready** for seamless deployment.
 
 ---
 
 # 🐳 Recommended Setup (Docker)
 
-> ✔ No Python installation required  
-> ✔ Cross-platform (Windows / Linux / Mac)  
+> ✔ No local Python dependencies required  
+> ✔ Cross-platform stability (Windows / Linux / Mac)  
 
----
-
-## 🔧 Step 1 — Install Docker
-
-Download Docker Desktop:  
-https://www.docker.com/products/docker-desktop/
-
----
-
-## 📥 Step 2 — Clone Repository
-
-```bash
+### 📥 Step 1 — Clone & Navigate
+```powershell
 git clone https://github.com/ayushsingh1406/OCR-Based-Scholarship-Processing-System.git
 cd OCR_Project
 ```
 
----
-
-## 🏗️ Step 3 — Build Docker Image (One-Time)
-
-```bash
+### 🏗️ Step 2 — Build Environment
+```powershell
 docker build -t ocr-project .
 ```
 
----
-
-## 📁 Step 4 — Create Model Cache Directory
-
-```bash
-mkdir paddle_models
+### ▶️ Step 3 — Start API Server
+```powershell
+docker run -it -p 8000:8000 `
+  -v ${PWD}:/app `
+  -v ${PWD}/paddle_models:/paddle_models `
+  ocr-project uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
----
-
-## ▶️ Step 5 — Run the Project
-
-This command mounts:
-
-- 📂 Project directory → enables live updates  
-- 📦 Model cache → avoids re-downloading OCR models  
-
----
-
-### 🔹 Windows (PowerShell)
-
-```bash
-docker run -it -v ${PWD}:/app -v ${PWD}/paddle_models:/root/.paddlex ocr-project
-```
-
----
-
-### 🔹 Windows (CMD)
-
-```bash
-docker run -it -v %cd%:/app -v %cd%/paddle_models:/root/.paddlex ocr-project
-```
-
----
-
-### 🔹 Linux / Mac
-
-```bash
-docker run -it -v $(pwd):/app -v $(pwd)/paddle_models:/root/.paddlex ocr-project
+### 💻 Step 4 — Launch Frontend
+Open a new terminal:
+```powershell
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
 ## ⚡ Important Notes
 
-- `/app` mount:
-  - Enables live file updates (e.g., `test_images`)
-  - Reflects code changes without rebuilding  
-
-- `/root/.paddlex` mount:
-  - Stores OCR models locally  
-  - Prevents repeated downloads  
-
-### ❗ Without `/app` mount:
-- New images will NOT be detected  
-- Code updates will NOT reflect  
+- **`/app` mount**: Enables live processing of uploaded documents.
+- **`/paddle_models` mount**: Caches OCR models (~2GB) to prevent redundant downloads.
+- **Data Persistence**: Analysis results are stored in the `output/` directory for audit trails.
 
 ---
 
-## 💡 Tip
+## 🧪 Usage Workflow
 
-After building the image once:
-- Add new images anytime to `test_images/`
-- Re-run the container without rebuilding  
-
----
-
-## 🧪 Usage
-
-1. Place input images inside:
-
-```
-test_images/
-```
-
-2. Run the system (Docker)
-
-3. Output will be generated at:
-
-```
-output/result.json
-```
+1. Navigate to the frontend workspace (default: `http://localhost:5173`).
+2. Upload the required trinity: **Identity Proof**, **Academic Marksheet**, and **Income Certificate**.
+3. Initialize the **Analysis Engine**.
+4. Review the **Intelligence Report** and **Visual Evidence** sections.
+5. Click on any document to view the full-resolution source or AI detection layer.
 
 ---
 
-## � Project Structure
+## 📂 Project Structure
 
 ```
 OCR_Project/
-├── main.py                          # Entry point - runs OCR processing
-├── requirements.txt                 # Python dependencies
-├── Dockerfile                       # Docker configuration
-├── README.md                        # This file
+├── server.py                        # FastAPI Gateway (API Layer)
+├── main.py                          # Core OCR & Decision Engine
+├── requirements.txt                 # Backend dependencies
+├── Dockerfile                       # Container manifest
 │
-├── test_images/                     # Input: Place document images here
-│   └── (user adds image files)
+├── frontend/                        # React + Vite Workspace
+│   ├── src/                         # UI logic (App.jsx, index.css)
+│   ├── package.json                 # Node dependencies
+│   └── index.html                   # Entry point
 │
-├── output/                          # Output: Generated results
-│   ├── results.json                 # Main OCR extraction results
-│   ├── decision.json                # Classification/decision output
-│   └── annotated/                   # Annotated images (if enabled)
+├── test_images/                     # Input: Active processing queue
+├── output/                          # Output: Analysis results
+│   ├── results.json                 # Raw field extraction
+│   ├── decision.json                # Final eligibility status
+│   └── annotated/                   # YOLO detection visuals
 │
-├── utils/                           # Core processing modules
-│   ├── preprocess.py                # Image preprocessing
-│   ├── document_classifier.py       # Document type classification
-│   ├── scholarship_decision.py      # Scholarship eligibility logic
-│   ├── watermark_detector.py        # Watermark detection
-│   │
-│   ├── parsers/                     # Document-specific parsers
-│   │   ├── aadhaar.py               # Aadhaar card parsing
-│   │   ├── pan.py                   # PAN card parsing
-│   │   ├── income.py                # Income certificate parsing
-│   │   └── marksheet.py             # Marksheet parsing
-│   │
-│   └── verification/                # Verification modules
+├── utils/                           # Engine Components
+│   ├── preprocess.py                # Image optimization
+│   ├── document_classifier.py       # Structural classification
+│   ├── scholarship_decision.py      # Eligibility logic
+│   ├── watermark_detector.py        # Authenticity detection
+│   └── parsers/                     # Document-specific regex engines
 │
-├── paddle_models/                   # OCR Model storage (auto-downloaded)
-│   ├── official_models/             # PaddleOCR models
-│   │   ├── PP-LCNet_x1_0_doc_ori/   # Document classification model
-│   │   ├── PP-LCNet_x1_0_textline_ori/  # Text line detection model
-│   │   ├── PP-OCRv5_server_det/     # Text detection model
-│   │   ├── PP-OCRv5_server_rec/     # Text recognition model
-│   │   └── UVDoc/                   # Document understanding model
-│   ├── func_ret/                    # Function return artifacts
-│   ├── locks/                       # Lock files for model safety
-│   └── temp/                        # Temporary processing files
-│
-└── yolo_detector/                   # YOLO detection models
-    └── models/
-        └── detector.pt              # YOLO detector weights
-```
-
-### 📋 Key Directories
-
-| Directory | Purpose |
-|-----------|---------|
-| `test_images/` | **INPUT**: Place document images here before running |
-| `output/` | **OUTPUT**: Results stored as JSON files |
-| `utils/` | **CORE**: Processing logic and document parsers |
-| `paddle_models/` | **MODELS**: OCR models (auto-managed, ~2GB) |
-| `yolo_detector/` | **DETECTION**: YOLO-based object detection models |
-
----
-
-## 🔁 Team Workflow
-
-For collaborators:
-
-```bash
-git pull
-docker build -t ocr-project .
-docker run -it -v <path>/paddle_models:/root/.paddlex ocr-project
+├── paddle_models/                   # OCR Model Cache
+└── yolo_detector/                   # YOLO Weights & Models
 ```
 
 ---
 
-# 🖥️ Alternative Setup (Without Docker)
+## 🔁 Manual Development (Local)
 
-> ⚠️ Not recommended (possible dependency conflicts)
+> ⚠️ Requires Python 3.10+ and Node.js
 
-```bash
+### 1. API Initialization
+```powershell
 python -m venv venv
-
-# Activate environment
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # Linux/Mac
-
+venv\Scripts\activate
 pip install -r requirements.txt
-python main.py
+python server.py
+```
+
+### 2. UI Initialization
+```powershell
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-## 🔒 Data Privacy Notice
+## 🔒 Data Privacy
 
-This repository does NOT include:
-
-- Aadhaar images  
-- Any sensitive personal data  
-
-Users must provide their own test data locally.
-
----
-
-## 🛠️ Future Scope
-
-- 🌐 FastAPI integration (API layer)  
-- 🗄️ Database integration  
-- 📤 Web-based document upload system  
-- 🤖 Advanced ML-based field extraction  
+This system is designed for **local-first processing**. No document data is transmitted to external servers for OCR; all models run locally within the container or host environment.
 
 ---
 
 ## 👥 Contributors
 
-- Ayush Kumar Singh  
-- Aditi Avinash Sable  
-- Heramb Pandey  
+- **Ayush Kumar Singh**
+- **Aditi Avinash Sable**
+- **Heramb Pandey**
 
 ---
 
