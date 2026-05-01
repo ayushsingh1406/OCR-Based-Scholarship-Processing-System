@@ -29,7 +29,6 @@ class ScholarshipDecisionEngine:
     def _clean_guardian_name(self, name: Optional[str]) -> str:
         """
         Manually remove prefixes like 'Guardian's', 'S/O', 'D/O', etc.
-        As requested, prioritizes cleanliness for decision.json.
         """
         if not name or str(name).upper() == "N/A":
             return "N/A"
@@ -101,7 +100,7 @@ class ScholarshipDecisionEngine:
             student_ms_name = marksheet_doc.get("student_name")
             sim = self._get_similarity(student_id_name, student_ms_name)
             consistency_scores.append(sim)
-            if sim < 0.8:
+            if sim < 0.75:
                 reasons.append(f"Student name variation across documents (Similarity: {int(sim*100)}%)")
 
         # Parent/Guardian Match (Marksheet vs Income or ID)
@@ -117,16 +116,44 @@ class ScholarshipDecisionEngine:
             if sim_father < 0.7:
                 reasons.append(f"Parental name variation between Marksheet and Income Cert (Similarity: {int(sim_father*100)}%)")
 
-        # 4. Authenticity Validation (Watermarks)
-        docs = [id_doc, marksheet_doc, income_doc]
+        # 4. Authenticity Validation (Document-Specific Requirements)
         missing_watermarks = False
-        for doc in docs:
-            if doc:
-                wm = doc.get("watermark_detection", {})
-                # Require ashoka_emblem as baseline authenticity
-                if not wm.get("ashoka_emblem", False):
-                    missing_watermarks = True
-                    reasons.append(f"Authenticity warning: Ashoka Emblem not clearly detected in {doc.get('document_type')}")
+
+        # Aadhaar: requires ashoka_emblem AND aadhaar_logo
+        if id_doc and id_doc.get("document_type") == DocumentType.AADHAAR:
+            wm = id_doc.get("watermark_detection", {})
+            if not wm.get("ashoka_emblem", False):
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Ashoka Emblem not detected in Aadhaar card")
+            if not wm.get("aadhaar_logo", False):
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Aadhaar logo not detected in Aadhaar card")
+
+        # PAN: requires ashoka_emblem AND signature
+        if id_doc and id_doc.get("document_type") == DocumentType.PAN:
+            wm = id_doc.get("watermark_detection", {})
+            if not wm.get("ashoka_emblem", False):
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Ashoka Emblem not detected in PAN card")
+            if not wm.get("signature", False):
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Signature not detected in PAN card")
+
+        # Marksheet: requires signature ONLY (no Ashoka emblem needed)
+        if marksheet_doc:
+            wm = marksheet_doc.get("watermark_detection", {})
+            if not wm.get("signature", False):
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Signature not detected in Marksheet")
+
+        # Income Certificate: requires ashoka_emblem OR signature (either is valid)
+        if income_doc:
+            wm = income_doc.get("watermark_detection", {})
+            has_emblem = wm.get("ashoka_emblem", False)
+            has_signature = wm.get("signature", False)
+            if not has_emblem and not has_signature:
+                missing_watermarks = True
+                reasons.append("Authenticity warning: Neither Ashoka Emblem nor Signature detected in Income Certificate")
 
         # 5. Determine Scholarship Amount (Dynamic)
         # academic_score = max(0, (percentage - 50) / 50) -> 0 to 1

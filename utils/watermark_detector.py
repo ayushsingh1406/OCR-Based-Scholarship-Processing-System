@@ -19,7 +19,6 @@ class WatermarkDetector:
                 print(f"  [ERROR] Failed to load YOLO model: {e}")
                 self.model = None
 
-        # Class Mapping as provided by user
         # 0 -> aadhaar_logo, 1 -> ashoka_emblem, 2 -> signature
         self.class_map = {
             0: "aadhaar_logo",

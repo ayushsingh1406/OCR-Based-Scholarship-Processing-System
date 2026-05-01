@@ -146,3 +146,5 @@ node_modules/.vite/
 
 *.bak
 *.orig
+
+Backup_aadhaar_parser.txt

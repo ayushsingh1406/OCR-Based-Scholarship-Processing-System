@@ -190,7 +190,11 @@ def process_document_image(ocr_engine, watermark_detector, image_path: str, verb
         elif doc_type == DocumentType.PAN:
             watermark_results["ashoka_emblem"] = detections.get("ashoka_emblem", False)
             watermark_results["signature"] = detections.get("signature", False)
-        elif doc_type == DocumentType.MARKSHEET or doc_type == DocumentType.INCOME:
+        elif doc_type == DocumentType.MARKSHEET:
+            # Marksheet only requires a signature for authenticity
+            watermark_results["signature"] = detections.get("signature", False)
+        elif doc_type == DocumentType.INCOME:
+            # Income certificate: either Ashoka emblem OR signature is sufficient
             watermark_results["ashoka_emblem"] = detections.get("ashoka_emblem", False)
             watermark_results["signature"] = detections.get("signature", False)
         else:

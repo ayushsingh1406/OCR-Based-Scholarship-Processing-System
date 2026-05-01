@@ -29,9 +29,9 @@ RUN pip install --upgrade pip \
 # ---- Copy only necessary files ----
 # (DO NOT use COPY . . blindly)
 COPY server.py .
-# If you have folders, explicitly copy them:
-# COPY src/ ./src/
-# COPY utils/ ./utils/
+COPY main.py .
+COPY utils/ ./utils/
+COPY yolo_detector/ ./yolo_detector/
 
 # ---- Create runtime directories (empty, no data baked in) ----
 RUN mkdir -p /app/output /app/test_images /paddle_models
